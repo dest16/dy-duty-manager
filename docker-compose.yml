@@ -1,0 +1,67 @@
+version: "3.8"
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: django_backend
+    volumes:
+      - ./server:/app
+    depends_on:
+      - db
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=True
+      - DATABASE_URL=mysql://root:password@db:3306/mydb
+      - TZ=Asia/Shanghai
+    expose:
+      - "8000"
+    restart: always
+    networks:
+      network:
+        ipv4_address: 177.10.0.12
+
+  db:
+    image: m.daocloud.io/docker.io/library/mysql:8
+    container_name: mysql_db
+    environment:
+      - MYSQL_ROOT_PASSWORD=password  # Root 密码
+      - MYSQL_DATABASE=mydb  # 默认数据库
+      - TZ=Asia/Shanghai
+    volumes:
+      - "./mysql/data:/var/lib/mysql"
+      - "./mysql/conf.d:/etc/mysql/conf.d"
+      - "./mysql/logs:/logs"
+    ports:
+      - "3306:3306"
+    networks:
+      network:
+        ipv4_address: 177.10.0.13
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: vue_frontend
+    environment:
+      - TZ=Asia/Shanghai
+    ports:
+      - "8080:8080"
+    depends_on:
+      - backend
+    expose:
+      - "8080"
+    restart: always
+    networks:
+      network:
+        ipv4_address: 177.10.0.11
+
+networks:
+  network:
+    ipam:
+      driver: default
+      config:
+        - subnet: '177.10.0.0/16'
+
